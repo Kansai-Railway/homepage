@@ -238,7 +238,6 @@
       </a>
     </header>
 
-    <!-- ログイン -->
     <div id="login-box">
       <h2>社員ログイン</h2>
       <input type="text" id="employee-id" placeholder="社員IDを入力" /><br />
@@ -246,7 +245,6 @@
       <div id="login-error" style="color: red; margin-top: 10px"></div>
     </div>
 
-    <!-- チャット -->
     <div id="chat-container">
       <div class="section-header">
         <div id="my-page-title">マイページ</div>
@@ -268,11 +266,9 @@
       </div>
     </div>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
-      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
       const firebaseConfig = {
         apiKey: 'AIzaSyCBn05euFWQVdKPSIZrwpUjxSOFphET3TU',
         authDomain: 'chat-a19bc.firebaseapp.com',
@@ -285,7 +281,6 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
 
-      // ユーザーと色
       const users = {
         '8hWAp3Mc': { name: 'wasd', status: '管理職' },
         Kaitoku0213: { name: '臨時快特【東京の民】', status: '管理職' },
@@ -333,7 +328,6 @@
         );
       }
 
-      // ログイン
       document.getElementById('login-btn').addEventListener('click', () => {
         const enteredID = document.getElementById('employee-id').value.trim();
         if (!users[enteredID]) {
@@ -374,7 +368,6 @@
         const fileInput = document.getElementById('img-file');
         const previewImg = document.getElementById('preview-img');
 
-        // プレビュー表示
         fileInput.addEventListener('change', () => {
           if (fileInput.files && fileInput.files[0]) {
             const reader = new FileReader();
@@ -389,13 +382,11 @@
         document.getElementById('send').addEventListener('click', () => {
           const text = msgInput.value.trim();
           const file = fileInput.files[0];
-
           if (!text && !file) return;
 
           const reader = new FileReader();
           reader.onload = async () => {
             const imageBase64 = reader.result || null;
-
             const lastMsgSnap = await db
               .collection('chat')
               .orderBy('number', 'desc')
@@ -415,6 +406,9 @@
               time: firebase.firestore.FieldValue.serverTimestamp(),
             });
 
+            // 古いメッセージ削除
+            deleteOldMessages();
+
             msgInput.value = '';
             fileInput.value = '';
             previewImg.style.display = 'none';
@@ -424,6 +418,7 @@
           else reader.onload();
         });
 
+        // リアルタイムでチャット表示
         db.collection('chat')
           .orderBy('time')
           .onSnapshot((snapshot) => {
@@ -441,12 +436,15 @@
 
               const numberStr = data.number ? `${data.number}. ` : '';
               const timeStr = formatTime(data.time);
-
               div.innerHTML = `
-        <div class="meta-line">${numberStr}${data.name}（${timeStr}）</div>
-        <div class="text-line" id="text-${doc.id}">${linkify(data.text)}</div>
-        ${data.imageBase64 ? `<img src="${data.imageBase64}" />` : ''}
-      `;
+              <div class="meta-line">${numberStr}${
+                data.name
+              }（${timeStr}）</div>
+              <div class="text-line" id="text-${doc.id}">${linkify(
+                data.text
+              )}</div>
+              ${data.imageBase64 ? `<img src="${data.imageBase64}" />` : ''}
+            `;
 
               if (data.uid === currentUserID) {
                 div.classList.add('self');
@@ -454,32 +452,45 @@
                 const actions = document.createElement('div');
                 actions.classList.add('msg-actions');
                 actions.innerHTML = `
-          <span onclick="editMsg('${doc.id}', \`${data.text}\`)">編集</span>
-          <span onclick="deleteMsg('${doc.id}')">削除</span>
-        `;
+                <span onclick="editMsg('${doc.id}', \`${data.text}\`)">編集</span>
+                <span onclick="deleteMsg('${doc.id}')">削除</span>
+              `;
                 div.appendChild(actions);
               }
-
               chatBox.appendChild(div);
             });
             chatBox.scrollTop = chatBox.scrollHeight;
           });
+
+        // 定期的に古いメッセージ削除
+        setInterval(deleteOldMessages, 5 * 60 * 1000);
       }
 
-      // 編集・削除
+      async function deleteOldMessages() {
+        const snapshot = await db
+          .collection('chat')
+          .orderBy('time', 'desc')
+          .offset(200)
+          .get();
+        snapshot.forEach((doc) => {
+          db.collection('chat').doc(doc.id).delete();
+        });
+      }
+
       function editMsg(id, oldText) {
         const textEl = document.getElementById(`text-${id}`);
         if (!textEl) return;
         textEl.innerHTML = `
-    <div class="edit-box" style="display:flex; gap:8px; margin-top:8px; align-items:flex-start;">
-      <textarea id="edit-area-${id}" style="flex:1; height:70px;">${oldText}</textarea>
-      <div style="display:flex; gap:4px; flex-direction:column;">
-        <button style="background-color:#e04040;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="saveEdit('${id}')">保存</button>
-        <button style="background-color:#e0e0e0;color:black;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="cancelEdit('${id}',\`${oldText}\`)">キャンセル</button>
-      </div>
-    </div>
-  `;
+          <div class="edit-box" style="display:flex; gap:8px; margin-top:8px; align-items:flex-start;">
+            <textarea id="edit-area-${id}" style="flex:1; height:70px;">${oldText}</textarea>
+            <div style="display:flex; gap:4px; flex-direction:column;">
+              <button style="background-color:#e04040;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="saveEdit('${id}')">保存</button>
+              <button style="background-color:#e0e0e0;color:black;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="cancelEdit('${id}',\`${oldText}\`)">キャンセル</button>
+            </div>
+          </div>
+        `;
       }
+
       function saveEdit(id) {
         const el = document.getElementById(`edit-area-${id}`);
         if (!el) return;
@@ -493,11 +504,13 @@
         db.collection('chat').doc(id).update({ text: newText });
         cancelEdit(id, newText);
       }
+
       function cancelEdit(id, text) {
         const textEl = document.getElementById(`text-${id}`);
         if (!textEl) return;
         textEl.textContent = text;
       }
+
       function deleteMsg(id) {
         if (confirm('本当に削除しますか？'))
           db.collection('chat').doc(id).delete();
