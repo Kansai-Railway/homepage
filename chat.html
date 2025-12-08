@@ -342,26 +342,37 @@
         );
       }
 
-      document.getElementById('login-btn').addEventListener('click', () => {
-        const enteredID = document.getElementById('employee-id').value.trim();
-        if (!users[enteredID]) {
-          document.getElementById('login-error').textContent =
-            '社員IDが正しくありません';
-          return;
-        }
-        currentUserID = enteredID;
-        currentUserName = users[enteredID].name;
-        currentUserStatus = users[enteredID].status;
-        document.getElementById('login-box').style.display = 'none';
-        document.getElementById('chat-container').style.display = 'flex';
-        document.getElementById(
-          'my-page-title'
-        ).textContent = `${currentUserName}のマイページ`;
-        document.getElementById(
-          'current-user-name'
-        ).textContent = `現在制作中です。要望などありましたらお寄せください。`;
+      document.getElementById('login-btn').addEventListener('click', async () => {
+      const enteredID = document.getElementById('employee-id').value.trim();
+
+        try {
+          const doc = await employeeDB.collection("employees").doc(enteredID).get();
+          if (!doc.exists) {
+            document.getElementById('login-error').textContent =
+              '社員IDが正しくありません';
+            return;
+          }
+          
+          const data = doc.data();
+          currentUserID = enteredID;
+          currentUserName = data.name;
+          currentUserStatus = data.status;
+
+          document.getElementById('login-box').style.display = 'none';
+          document.getElementById('chat-container').style.display = 'flex';
+          document.getElementById('my-page-title').textContent =
+          `${currentUserName}のマイページ`;
+
+          document.getElementById('current-user-name').textContent =
+          `現在制作中です。要望などありましたらお寄せください。`;
+
         initChat();
+
+        } catch (e) {
+          document.getElementById('login-error').textContent = '通信エラー';
+        }
       });
+
 
       function formatTime(timestamp) {
         if (!timestamp) return '';
