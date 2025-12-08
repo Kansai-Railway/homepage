@@ -381,83 +381,102 @@
           } else previewImg.style.display = 'none';
         });
 
-        document.getElementById('send').addEventListener('click', () => {
+        let isSending = false;
+
+        document.getElementById('send').addEventListener('click', async () => {
+          if (isSending) return;   // ← 連打防止（最重要）
+          isSending = true;
+          const sendBtn = document.getElementById('send');
+          sendBtn.disabled = true; // ← ボタン無効化
           const text = msgInput.value.trim();
           const file = fileInput.files[0];
-          if (!text && !file) return;
-
+          if (!text && !file) {
+            isSending = false;
+            sendBtn.disabled = false;
+            return;
+          }
           const reader = new FileReader();
           reader.onload = async () => {
-            const imageBase64 = reader.result || null;
-            const lastMsgSnap = await db
-              .collection('chat')
-              .orderBy('number', 'desc')
-              .limit(1)
-              .get();
-            let newNumber = 1;
-            if (!lastMsgSnap.empty)
-              newNumber = (lastMsgSnap.docs[0].data().number || 0) + 1;
+            try {
+              const imageBase64 = reader.result || null;
 
-            await db.collection('chat').add({
-              text,
-              imageBase64,
-              uid: currentUserID,
-              name: currentUserName,
-              status: currentUserStatus,
-              number: newNumber,
-              time: firebase.firestore.FieldValue.serverTimestamp(),
-            });
+              // 最新番号の取得
+              const lastMsgSnap = await db
+                .collection('chat')
+                .orderBy('number', 'desc')
+                .limit(1)
+                .get();
 
-            // 古いメッセージ削除
-            deleteOldMessages();
+              let newNumber = 1;
+              if (!lastMsgSnap.empty)
+                newNumber = (lastMsgSnap.docs[0].data().number || 0) + 1;
 
-            msgInput.value = '';
-            fileInput.value = '';
-            previewImg.style.display = 'none';
+              // 送信
+              await db.collection('chat').add({
+                text,
+                imageBase64,
+                uid: currentUserID,
+                name: currentUserName,
+                status: currentUserStatus,
+                number: newNumber,
+                time: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+              deleteOldMessages();
+              msgInput.value = '';
+              fileInput.value = '';
+              previewImg.style.display = 'none';
+            } finally {
+              isSending = false;
+              sendBtn.disabled = false; // ← ボタンを戻す
+            }
           };
 
           if (file) reader.readAsDataURL(file);
           else reader.onload();
         });
 
+        if (file) reader.readAsDataURL(file);
+        else reader.onload();
+      });
+
         // リアルタイムでチャット表示
-        db.collection('chat')
-          .orderBy('time')
-          .onSnapshot((snapshot) => {
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML = '';
-            snapshot.forEach((doc) => {
-              const data = doc.data();
-              const colorSet =
-                statusColors[data.status] || statusColors['一般'];
-              const div = document.createElement('div');
-              div.classList.add('chat-message');
-              div.style.background = colorSet.bg;
-              div.style.borderLeft = `6px solid ${colorSet.border}`;
-              div.dataset.id = doc.id;
+      db.collection('chat')
+        .orderBy('time')
+        .onSnapshot((snapshot) => {
+          const chatBox = document.getElementById('chat-box');
+          chatBox.innerHTML = '';
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const colorSet =
+              statusColors[data.status] || statusColors['一般'];
+            const div = document.createElement('div');
+            div.classList.add('chat-message');
+            div.style.background = colorSet.bg;
+            div.style.borderLeft = `6px solid ${colorSet.border}`;
+            div.dataset.id = doc.id;
 
-              const numberStr = data.number ? `${data.number}. ` : '';
-              const timeStr = formatTime(data.time);
-              div.innerHTML = `
-              <div class="meta-line">${numberStr}${
-                data.name
-              }（${timeStr}）</div>
-              <div class="text-line" id="text-${doc.id}">${linkify(
-                data.text
-              )}</div>
-              ${data.imageBase64 ? `<img src="${data.imageBase64}" />` : ''}
+            const numberStr = data.number ? `${data.number}. ` : '';
+            const timeStr = formatTime(data.time);
+            div.innerHTML = `
+            <div class="meta-line">${numberStr}${
+              data.name
+            }（${timeStr}）</div>
+            <div class="text-line" id="text-${doc.id}">${linkify(
+              data.text
+            )}</div>
+            ${data.imageBase64 ? `<img src="${data.imageBase64}" />` : ''}
             `;
-
-              if (data.uid === currentUserID) {
-                div.classList.add('self');
-                div.style.border = `2px solid ${colorSet.border}`;
-                const actions = document.createElement('div');
-                actions.classList.add('msg-actions');
-                actions.innerHTML = `
-                <span onclick="editMsg('${doc.id}', \`${data.text}\`)">編集</span>
-                <span onclick="deleteMsg('${doc.id}')">削除</span>
+            
+            if (data.uid === currentUserID) {
+              div.classList.add('self');
+              div.style.border = `2px solid ${colorSet.border}`;
+              const actions = document.createElement('div');
+              actions.classList.add('msg-actions');
+              actions.innerHTML = `
+              <span onclick="editMsg('${doc.id}', \`${data.text}\`)">編集</span>
+              <span onclick="deleteMsg('${doc.id}')">削除</span>
               `;
-                div.appendChild(actions);
+              div.appendChild(actions);
               }
               chatBox.appendChild(div);
             });
