@@ -5,250 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>関西電鉄社員チャット</title>
     <style>
-      html,
-      body {
-        overflow-x: hidden;
-        margin: 0;
-        font-family: 'Noto Sans JP', sans-serif;
-        background: #f6f8f9;
-        color: #333;
-        font-size: 18px;
-      }
-      .top-bar {
-        position: sticky;
-        top: 0;
-        width: 100%;
-        background: #f6f8f9;
-        padding: 20px 0 20px 55px;
-        border-bottom: 2px solid #e04040;
-        display: flex;
-        align-items: center;
-        z-index: 1000;
-      }
-      .top-bar .logo {
-        height: 100px;
-        object-fit: contain;
-        cursor: pointer;
-      }
-      #login-box {
-        max-width: 450px;
-        margin: 50px auto;
-        padding: 40px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
-        text-align: center;
-        font-size: 1.1rem;
-      }
-      #login-box input {
-        width: 85%;
-        padding: 14px;
-        border-radius: 10px;
-        border: 1px solid #ccc;
-        margin-bottom: 20px;
-        font-size: 1.05rem;
-      }
-      #login-box button {
-        padding: 14px 24px;
-        border-radius: 10px;
-        background: #e04040;
-        color: white;
-        font-weight: bold;
-        border: none;
-        cursor: pointer;
-        font-size: 1.05rem;
-      }
-      #chat-container {
-        max-width: 900px;
-        margin: 50px auto;
-        display: none;
-        flex-direction: column;
-        gap: 15px;
-      }
-      .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-left: 8px solid #e04040;
-        padding: 15px 20px;
-        background: white;
-        border-radius: 12px;
-        font-size: 1.6rem;
-        font-weight: bold;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-        cursor: pointer;
-      }
-      .toggle-symbol {
-        font-size: 2rem;
-        font-weight: bold;
-        user-select: none;
-      }
-      .current-user {
-        font-size: 1rem;
-        font-weight: normal;
-        color: #555;
-        margin-bottom: 20px;
-      }
-      #chat-box {
-        border: 1px solid #ccc;
-        min-height: 350px;
-        max-height: 600px;
-        overflow-y: auto;
-        padding: 20px;
-        background: white;
-        border-radius: 12px;
-        font-size: 1.05rem;
-        line-height: 1.6;
-      }
-      .chat-input {
-        display: flex;
-        gap: 12px;
-        margin-top: 10px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-      #msg {
-        flex: 1 1 auto;
-        min-width: 250px;
-        height: 50px;
-        padding: 12px;
-        border-radius: 10px;
-        border: 1px solid #ccc;
-        font-size: 1.05rem;
-        resize: none;
-        font-family: 'Noto Sans JP', sans-serif;
-      }
-      #img-file {
-        display: none;
-      }
-      #img-file-label {
-        cursor: pointer;
-        font-size: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: 1px solid #ccc;
-        background: #fff;
-      }
-      #send {
-        padding: 14px 24px;
-        border-radius: 10px;
-        background: #e04040;
-        color: white;
-        font-weight: bold;
-        border: none;
-        cursor: pointer;
-        font-size: 1.1rem;
-      }
-      .chat-message {
-        padding: 10px 14px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        border-left: 6px solid transparent;
-        background: white;
-        position: relative;
-      }
-      .chat-message img {
-        max-width: 300px;
-        margin-top: 8px;
-        border-radius: 6px;
-        display: block;
-      }
-      .self {
-        border: 2px solid;
-      }
-      .meta-line {
-        font-size: 1rem;
-        color: #333;
-        font-weight: bold;
-        margin-bottom: 6px;
-      }
-      .text-line {
-        font-size: 1.1rem;
-        color: #333;
-        white-space: pre-wrap;
-        margin-left: 12px;
-      }
-      .text-line a {
-        color: #0078ff;
-        text-decoration: underline;
-        word-break: break-all;
-      }
-      .msg-actions {
-        position: absolute;
-        top: 6px;
-        right: 8px;
-        display: flex;
-        gap: 8px;
-        font-size: 0.9rem;
-      }
-      .msg-actions span {
-        cursor: pointer;
-        color: #555;
-        text-decoration: underline;
-      }
-      .edit-box {
-        margin-top: 8px;
-      }
-      .edit-box textarea {
-        width: 95%;
-        height: 70px;
-        font-size: 1rem;
-        padding: 6px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        font-family: 'Noto Sans JP', sans-serif;
-        resize: none;
-      }
-      .edit-box button {
-        margin-top: 4px;
-        margin-right: 6px;
-        padding: 6px 12px;
-        font-size: 0.95rem;
-        border-radius: 6px;
-        border: none;
-        cursor: pointer;
-      }
-      .save-btn {
-        background-color: #28a745;
-        color: white;
-      }
-      .cancel-btn {
-        background-color: #dc3545;
-        color: white;
-      }
-      #preview-img {
-        max-width: 150px;
-        max-height: 150px;
-        margin-top: 8px;
-        border-radius: 6px;
-      }
+      html,body{overflow-x:hidden;margin:0;font-family:'Noto Sans JP',sans-serif;background:#f6f8f9;color:#333;font-size:18px}
+      .top-bar{position:sticky;top:0;width:100%;background:#f6f8f9;padding:20px 0 20px 55px;border-bottom:2px solid #e04040;display:flex;align-items:center;z-index:1000}
+      .top-bar .logo{height:100px;object-fit:contain;cursor:pointer}
+      #login-box{max-width:450px;margin:50px auto;padding:40px;background:white;border-radius:10px;box-shadow:0 3px 15px rgba(0,0,0,.1);text-align:center;font-size:1.1rem}
+      #login-box input{width:85%;padding:14px;border-radius:10px;border:1px solid #ccc;margin-bottom:20px;font-size:1.05rem}
+      #login-box button{padding:14px 24px;border-radius:10px;background:#e04040;color:white;font-weight:bold;border:none;cursor:pointer;font-size:1.05rem}
+      #chat-container{max-width:900px;margin:50px auto;display:none;flex-direction:column;gap:15px}
+      .section-header{display:flex;justify-content:space-between;align-items:center;border-left:8px solid #e04040;padding:15px 20px;background:white;border-radius:12px;font-size:1.6rem;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,.1);cursor:pointer}
+      .toggle-symbol{font-size:2rem;font-weight:bold;user-select:none}
+      .current-user{font-size:1rem;font-weight:normal;color:#555;margin-bottom:20px}
+      #chat-box{border:1px solid #ccc;min-height:350px;max-height:600px;overflow-y:auto;padding:20px;background:white;border-radius:12px;font-size:1.05rem;line-height:1.6}
+      .chat-input{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;align-items:center}
+      #msg{flex:1 1 auto;min-width:250px;height:50px;padding:12px;border-radius:10px;border:1px solid #ccc;font-size:1.05rem;resize:none;font-family:'Noto Sans JP',sans-serif}
+      #img-file{display:none}
+      #img-file-label{cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:1px solid #ccc;background:#fff}
+      #send{padding:14px 24px;border-radius:10px;background:#e04040;color:white;font-weight:bold;border:none;cursor:pointer;font-size:1.1rem}
+      .chat-message{padding:10px 14px;border-radius:10px;margin-bottom:10px;border-left:6px solid transparent;background:white;position:relative}
+      .chat-message img{max-width:300px;margin-top:8px;border-radius:6px;display:block}
+      .self{border:2px solid}
+      .meta-line{font-size:1rem;color:#333;font-weight:bold;margin-bottom:6px}
+      .text-line{font-size:1.1rem;color:#333;white-space:pre-wrap;margin-left:12px}
+      .text-line a{color:#0078ff;text-decoration:underline;word-break:break-all}
+      .msg-actions{position:absolute;top:6px;right:8px;display:flex;gap:8px;font-size:.9rem}
+      .msg-actions span{cursor:pointer;color:#555;text-decoration:underline}
+      .edit-box{margin-top:8px}
+      .edit-box textarea{width:95%;height:70px;font-size:1rem;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:'Noto Sans JP',sans-serif;resize:none}
+      .edit-box button{margin-top:4px;margin-right:6px;padding:6px 12px;font-size:.95rem;border-radius:6px;border:none;cursor:pointer}
+      #preview-img{max-width:150px;max-height:150px;margin-top:8px;border-radius:6px}
     </style>
   </head>
   <body>
     <header class="top-bar">
-      <a href="index.html">
-        <img
-          src="https://i.postimg.cc/hGSYwRwq/z-Xs-KD4El-Ok-DUud-O1762643882-1762643953.png"
-          class="logo"
-        />
-      </a>
+      <a href="index.html"><img src="https://i.postimg.cc/hGSYwRwq/z-Xs-KD4El-Ok-DUud-O1762643882-1762643953.png" class="logo" /></a>
     </header>
 
     <div id="login-box">
       <h2>社員ログイン</h2>
       <input type="text" id="employee-id" placeholder="社員IDを入力" /><br />
       <button id="login-btn">ログイン</button>
-      <div id="login-error" style="color: red; margin-top: 10px"></div>
+      <div id="login-error" style="color:red;margin-top:10px"></div>
     </div>
 
     <div id="chat-container">
       <div class="section-header">
         <div id="my-page-title">マイページ</div>
-        <div class="toggle-symbol" style="visibility: hidden">－</div>
+        <div class="toggle-symbol" style="visibility:hidden">－</div>
       </div>
       <div class="current-user" id="current-user-name"></div>
 
@@ -257,11 +59,12 @@
         <div class="toggle-symbol" id="chat-toggle">－</div>
       </div>
       <div id="chat-box"></div>
+
       <div class="chat-input" id="chat-input">
         <textarea id="msg" placeholder="メッセージを入力"></textarea>
         <input type="file" id="img-file" accept="image/*" />
         <label for="img-file" id="img-file-label">🖼️</label>
-        <img id="preview-img" style="display: none" />
+        <img id="preview-img" style="display:none" />
         <button id="send">送信</button>
       </div>
     </div>
@@ -269,323 +72,149 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
-      // ▼ チャット用（今までのやつ）
       const firebaseConfig = {
-        apiKey: 'AIzaSyCBn05euFWQVdKPSIZrwpUjxSOFphET3TU',
-        authDomain: 'chat-a19bc.firebaseapp.com',
-        projectId: 'chat-a19bc',
-        storageBucket: 'chat-a19bc.firebasestorage.app',
-        messagingSenderId: '554571917384',
-        appId: '1:554571917384:web:3484a29f475fcf8db7d07d',
-        measurementId: 'G-8058H1PRN7',
+        apiKey:"AIzaSyCBn05euFWQVdKPSIZrwpUjxSOFphET3TU",
+        authDomain:"chat-a19bc.firebaseapp.com",
+        projectId:"chat-a19bc",
+        storageBucket:"chat-a19bc.firebasestorage.app",
+        messagingSenderId:"554571917384",
+        appId:"1:554571917384:web:3484a29f475fcf8db7d07d",
+        measurementId:"G-8058H1PRN7"
       };
-      const appChat = firebase.initializeApp(firebaseConfig);  
-      const db = firebase.firestore(appChat);   // ←チャットDBはこれのまま
-      
-      // ▼ 社員IDチェック用（新プロジェクト）
-      const employeeConfig = {
-        apiKey: "AIzaSyAWz50WSL2KvCS-0dmjtuGJHztEDR5CsZ8",
-        authDomain: "kandenmember.firebaseapp.com",
-        projectId: "kandenmember",
-        storageBucket: "kandenmember.firebasestorage.app",
-        messagingSenderId: "978509582642",
-        appId: "1:978509582642:web:d4b4e07ea1a6f5f768872b",
-        measurementId: "G-BFTYSMPKQ5"
+      const appChat=firebase.initializeApp(firebaseConfig);
+      const db=firebase.firestore(appChat);
+
+      const employeeConfig={
+        apiKey:"AIzaSyAWz50WSL2KvCS-0dmjtuGJHztEDR5CsZ8",
+        authDomain:"kandenmember.firebaseapp.com",
+        projectId:"kandenmember",
+        storageBucket:"kandenmember.firebasestorage.app",
+        messagingSenderId:"978509582642",
+        appId:"1:978509582642:web:d4b4e07ea1a6f5f768872b",
+        measurementId:"G-BFTYSMPKQ5"
       };
-      const appEmployee = firebase.initializeApp(employeeConfig, "employeeApp");
-      const employeeDB = firebase.firestore(appEmployee); // ←社員ログインD
-      const statusColors = {
-        管理職: { border: '#e04040', bg: '#f4f4f4' },
-        神戸: { border: '#ff66b2', bg: '#ffe6f0' },
-        淡路: { border: '#ff88ff', bg: '#ffeeff' },
-        阪北: { border: '#f00000', bg: '#ffe6e6' },
-        阪南: { border: '#f07000', bg: '#fff5e6' },
-        奈良: { border: '#00f000', bg: '#e6ffe6' },
-        滋賀: { border: '#00f0f0', bg: '#e6ffff' },
-        東海: { border: '#0000f0', bg: '#e6e6ff' },
-        本社: { border: '#000000', bg: '#e6e6e6' },
-        一般: { border: '#000000', bg: '#e6e6e6' },
-      };
+      const appEmployee=firebase.initializeApp(employeeConfig,"employeeApp");
+      const employeeDB=firebase.firestore(appEmployee);
 
-      let currentUserID = null,
-        currentUserName = null,
-        currentUserStatus = null;
+      const statusColors={管理職:{border:'#e04040',bg:'#f4f4f4'},神戸:{border:'#ff66b2',bg:'#ffe6f0'},淡路:{border:'#ff88ff',bg:'#ffeeff'},阪北:{border:'#f00000',bg:'#ffe6e6'},阪南:{border:'#f07000',bg:'#fff5e6'},奈良:{border:'#00f000',bg:'#e6ffe6'},滋賀:{border:'#00f0f0',bg:'#e6ffff'},東海:{border:'#0000f0',bg:'#e6e6ff'},本社:{border:'#000000',bg:'#e6e6e6'},一般:{border:'#000000',bg:'#e6e6e6'}};
 
-      function linkify(text) {
-        return text.replace(
-          /(https?:\/\/[^\s]+)/g,
-          '<a target="_blank" href="$1">$1</a>'
-        );
-      }
+      let currentUserID=null,currentUserName=null,currentUserStatus=null;
 
-      document.getElementById('login-btn').addEventListener('click', async () => {
-      const enteredID = document.getElementById('employee-id').value.trim();
+      function linkify(text){return text.replace(/(https?:\/\/[^\s]+)/g,'<a target="_blank" href="$1">$1<\/a>');}
 
-        try {
-          const doc = await employeeDB.collection("employees").doc(enteredID).get();
-          if (!doc.exists) {
-            document.getElementById('login-error').textContent =
-              '社員IDが正しくありません';
-            return;
-          }
-          
-          const data = doc.data();
-          currentUserID = enteredID;
-          currentUserName = data.name;
-          currentUserStatus = data.status;
-          window.loginUserId = enteredID;
+      document.getElementById('login-btn').addEventListener('click',async()=>{
+        const enteredID=document.getElementById('employee-id').value.trim();
+        try{
+          const doc=await employeeDB.collection("employees").doc(enteredID).get();
+          if(!doc.exists){document.getElementById('login-error').textContent='社員IDが正しくありません';return;}
+          const data=doc.data();
+          currentUserID=enteredID;
+          currentUserName=data.name;
+          currentUserStatus=data.status;
 
-          document.getElementById('login-box').style.display = 'none';
-          document.getElementById('chat-container').style.display = 'flex';
-          document.getElementById('my-page-title').textContent =
-          `${currentUserName}のマイページ`;
+          document.getElementById('login-box').style.display='none';
+          document.getElementById('chat-container').style.display='flex';
+          document.getElementById('my-page-title').textContent=`${currentUserName}のマイページ`;
+          document.getElementById('current-user-name').textContent='現在制作中です。要望などありましたらお寄せください。';
 
-          document.getElementById('current-user-name').textContent =
-          `現在制作中です。要望などありましたらお寄せください。`;
-
-        initChat();
-
-        } catch (e) {
-          document.getElementById('login-error').textContent = '通信エラー';
-        }
+          initChat();
+        }catch(e){document.getElementById('login-error').textContent='通信エラー';}
       });
 
+      function formatTime(timestamp){if(!timestamp)return'';const d=timestamp.toDate();return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;}
 
-      function formatTime(timestamp) {
-        if (!timestamp) return '';
-        const date = timestamp.toDate();
-        return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(
-          2,
-          '0'
-        )}/${String(date.getDate()).padStart(2, '0')} ${String(
-          date.getHours()
-        ).padStart(2, '0')}:${String(date.getMinutes()).padStart(
-          2,
-          '0'
-        )}:${String(date.getSeconds()).padStart(2, '0')}`;
-      }
+      function initChat(){
+        const msgInput=document.getElementById('msg');
+        const fileInput=document.getElementById('img-file');
+        const previewImg=document.getElementById('preview-img');
+        const sendBtn=document.getElementById('send');
 
-      function initChat() {
-        const msgInput = document.getElementById('msg');
-        const fileInput = document.getElementById('img-file');
-        const previewImg = document.getElementById('preview-img');
-        const sendBtn = document.getElementById('send');
-
-        fileInput.addEventListener('change', () => {
-          if (fileInput.files && fileInput.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              previewImg.src = e.target.result;
-              previewImg.style.display = 'block';
-            };
-            reader.readAsDataURL(fileInput.files[0]);
-          } else {
-            previewImg.style.display = 'none';
-            previewImg.src = '';
-          }
+        fileInput.addEventListener('change',()=>{
+          if(fileInput.files&&fileInput.files[0]){const r=new FileReader();r.onload=e=>{previewImg.src=e.target.result;previewImg.style.display='block';};r.readAsDataURL(fileInput.files[0]);}else{previewImg.style.display='none';previewImg.src='';}
         });
 
-        let isSending = false;
+        let isSending=false;
 
-        sendBtn.addEventListener('click', async () => {
-          if (isSending) return; // 多重送信防止
-          const text = msgInput.value.trim();
-          const file = fileInput.files[0];
-          if (!text && !file) return;
+        sendBtn.addEventListener('click',async()=>{
+          if(isSending)return;
+          const text=msgInput.value.trim();
+          const file=fileInput.files[0];
+          if(!text&&!file)return;
 
-          isSending = true;
-          sendBtn.disabled = true;
+          isSending=true;
+          sendBtn.disabled=true;
 
-          const reader = new FileReader();
-          reader.onload = async () => {
-            try {
-              const imageBase64 = reader.result || null;
-
-              // 最新番号の取得（簡易。高負荷回避のため要改善は後述）
-              const lastMsgSnap = await db
-                .collection('chat')
-                .orderBy('number', 'desc')
-                .limit(1)
-                .get();
-
-              let newNumber = 1;
-              if (!lastMsgSnap.empty) newNumber = (lastMsgSnap.docs[0].data().number || 0) + 1;
+          const reader=new FileReader();
+          reader.onload=async()=>{
+            try{
+              const imageBase64=reader.result||null;
+              const lastSnap=await db.collection('chat').orderBy('number','desc').limit(1).get();
+              let newNumber=1;
+              if(!lastSnap.empty)newNumber=(lastSnap.docs[0].data().number||0)+1;
 
               await db.collection('chat').add({
-                text,
-                imageBase64,
-                uid: currentUserID,
-                name: currentUserName,
-                status: currentUserStatus,
-                number: newNumber,
-                time: firebase.firestore.FieldValue.serverTimestamp(),
+                text,imageBase64,uid:currentUserID,name:currentUserName,status:currentUserStatus,number:newNumber,time:firebase.firestore.FieldValue.serverTimestamp(),
               });
 
-              // 古いメッセージ削除
               deleteOldMessages();
-
-              // 送信後クリア
-              msgInput.value = '';
-              fileInput.value = '';
-              previewImg.style.display = 'none';
-              previewImg.src = '';
-      
-            } catch (err) {
-              console.error('send error', err);
-              alert('送信中にエラーが発生しました');
-            } finally {
-              isSending = false;
-              sendBtn.disabled = false;
-            }
+              msgInput.value='';fileInput.value='';previewImg.style.display='none';previewImg.src='';
+            }catch(err){alert('送信中にエラーが発生しました');}
+            finally{isSending=false;sendBtn.disabled=false;}
           };
-
-          // 読み込み開始（file がなければ即 onload を呼ぶ）
-          if (file) reader.readAsDataURL(file);
-          else reader.onload();
+          if(file)reader.readAsDataURL(file);else reader.onload();
         });
 
-        // リアルタイムでチャット表示
-        db.collection('chat')
-          .orderBy('time')
-          .onSnapshot((snapshot) => {
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML = '';
-            snapshot.forEach((doc) => {
-              const data = doc.data();
-              const colorSet = statusColors[data.status] || statusColors['一般'];
-              const div = document.createElement('div');
-              div.classList.add('chat-message');
-              div.style.background = colorSet.bg;
-              div.style.borderLeft = `6px solid ${colorSet.border}`;
-              div.dataset.id = doc.id;
-
-              const numberStr = data.number ? `${data.number}. ` : '';
-              const timeStr = formatTime(data.time);
-              div.innerHTML = `
-                <div class="meta-line">${numberStr}${data.name}（${timeStr}）</div>
-                <div class="text-line" id="text-${doc.id}">${linkify(data.text)}</div>
-                ${data.imageBase64 ? `<img src="${data.imageBase64}" />` : ''}
-              `;
-
-              if (data.uid === currentUserID) {
-                div.classList.add('self');
-                div.style.border = `2px solid ${colorSet.border}`;
-                const actions = document.createElement('div');
-                actions.classList.add('msg-actions');
-                actions.innerHTML = `
-                  <span onclick="editMsg('${doc.id}', \`${data.text}\`)">編集</span>
-                  <span onclick="deleteMsg('${doc.id}')">削除</span>
-                `;
-                div.appendChild(actions);
-              }
-
-              chatBox.appendChild(div);
-            });
-            chatBox.scrollTop = chatBox.scrollHeight;
-          });
-
-        // 定期的に古いメッセージ削除
-        setInterval(deleteOldMessages, 5 * 60 * 1000);
-      }
-
-
-        // リアルタイムでチャット表示
-      db.collection('chat')
-        .orderBy('time')
-        .onSnapshot((snapshot) => {
-          const chatBox = document.getElementById('chat-box');
-          chatBox.innerHTML = '';
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            const colorSet =
-              statusColors[data.status] || statusColors['一般'];
-            const div = document.createElement('div');
+        db.collection('chat').orderBy('time').onSnapshot(snapshot=>{
+          const chatBox=document.getElementById('chat-box');
+          chatBox.innerHTML='';
+          snapshot.forEach(doc=>{
+            const data=doc.data();
+            const color=statusColors[data.status]||statusColors['一般'];
+            const div=document.createElement('div');
             div.classList.add('chat-message');
-            div.style.background = colorSet.bg;
-            div.style.borderLeft = `6px solid ${colorSet.border}`;
-            div.dataset.id = doc.id;
-
-            const numberStr = data.number ? `${data.number}. ` : '';
-            const timeStr = formatTime(data.time);
-            div.innerHTML = `
-            <div class="meta-line">${numberStr}${
-              data.name
-            }（${timeStr}）</div>
-            <div class="text-line" id="text-${doc.id}">${linkify(
-              data.text
-            )}</div>
-            ${data.imageBase64 ? `<img src="${data.imageBase64}" />` : ''}
-            `;
-            
-            if (data.uid === currentUserID) {
+            div.style.background=color.bg;
+            div.style.borderLeft=`6px solid ${color.border}`;
+            div.dataset.id=doc.id;
+            const num=data.number?`${data.number}. `:'';
+            const time=formatTime(data.time);
+            div.innerHTML=`<div class="meta-line">${num}${data.name}（${time}）</div><div class="text-line" id="text-${doc.id}">${linkify(data.text)}</div>${data.imageBase64?`<img src="${data.imageBase64}"/>`:''}`;
+            if(data.uid===currentUserID){
               div.classList.add('self');
-              div.style.border = `2px solid ${colorSet.border}`;
-              const actions = document.createElement('div');
-              actions.classList.add('msg-actions');
-              actions.innerHTML = `
-              <span onclick="editMsg('${doc.id}', \`${data.text}\`)">編集</span>
-              <span onclick="deleteMsg('${doc.id}')">削除</span>
-              `;
-              div.appendChild(actions);
-              }
-              chatBox.appendChild(div);
-            });
-            chatBox.scrollTop = chatBox.scrollHeight;
+              div.style.border=`2px solid ${color.border}`;
+              const a=document.createElement('div');a.classList.add('msg-actions');
+              a.innerHTML=`<span onclick="editMsg('${doc.id}', \`${data.text}\`)">編集</span><span onclick="deleteMsg('${doc.id}')">削除</span>`;
+              div.appendChild(a);
+            }
+            chatBox.appendChild(div);
           });
-
-        // 定期的に古いメッセージ削除
-        setInterval(deleteOldMessages, 5 * 60 * 1000);
-      }
-
-      async function deleteOldMessages() {
-        const snapshot = await db
-          .collection('chat')
-          .orderBy('time', 'desc')
-          .offset(200)
-          .get();
-        snapshot.forEach((doc) => {
-          db.collection('chat').doc(doc.id).delete();
+          chatBox.scrollTop=chatBox.scrollHeight;
         });
+
+        setInterval(deleteOldMessages,5*60*1000);
       }
 
-      function editMsg(id, oldText) {
-        const textEl = document.getElementById(`text-${id}`);
-        if (!textEl) return;
-        textEl.innerHTML = `
-          <div class="edit-box" style="display:flex; gap:8px; margin-top:8px; align-items:flex-start;">
-            <textarea id="edit-area-${id}" style="flex:1; height:70px;">${oldText}</textarea>
-            <div style="display:flex; gap:4px; flex-direction:column;">
-              <button style="background-color:#e04040;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="saveEdit('${id}')">保存</button>
-              <button style="background-color:#e0e0e0;color:black;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="cancelEdit('${id}',\`${oldText}\`)">キャンセル</button>
-            </div>
-          </div>
-        `;
+      async function deleteOldMessages(){
+        const snap=await db.collection('chat').orderBy('time','desc').offset(200).get();
+        snap.forEach(doc=>db.collection('chat').doc(doc.id).delete());
       }
 
-      function saveEdit(id) {
-        const el = document.getElementById(`edit-area-${id}`);
-        if (!el) return;
-        const newText = el.value.trim();
-        if (newText === '') {
-          if (confirm('編集後の内容が空です。このメッセージを削除しますか？'))
-            deleteMsg(id);
-          else cancelEdit(id, newText);
-          return;
-        }
-        db.collection('chat').doc(id).update({ text: newText });
-        cancelEdit(id, newText);
+      function editMsg(id,oldText){
+        const t=document.getElementById(`text-${id}`);
+        if(!t)return;
+        t.innerHTML=`<div class="edit-box" style="display:flex;gap:8px;margin-top:8px;align-items:flex-start;"><textarea id="edit-area-${id}" style="flex:1;height:70px;">${oldText}</textarea><div style="display:flex;gap:4px;flex-direction:column;"><button style="background-color:#e04040;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="saveEdit('${id}')">保存</button><button style="background-color:#e0e0e0;color:black;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="cancelEdit('${id}',\`${oldText}\`)">キャンセル</button></div></div>`;
       }
 
-      function cancelEdit(id, text) {
-        const textEl = document.getElementById(`text-${id}`);
-        if (!textEl) return;
-        textEl.textContent = text;
+      function saveEdit(id){
+        const el=document.getElementById(`edit-area-${id}`);
+        if(!el)return;
+        const newText=el.value.trim();
+        if(newText===''){if(confirm('空のため削除しますか？'))deleteMsg(id);else cancelEdit(id,newText);return;}
+        db.collection('chat').doc(id).update({text:newText});
+        cancelEdit(id,newText);
       }
 
-      function deleteMsg(id) {
-        if (confirm('本当に削除しますか？'))
-          db.collection('chat').doc(id).delete();
-      }
+      function cancelEdit(id,text){const t=document.getElementById(`text-${id}`);if(!t)return;t.textContent=text;}
+      function deleteMsg(id){if(confirm('本当に削除しますか？'))db.collection('chat').doc(id).delete();}
     </script>
   </body>
 </html>
