@@ -33,6 +33,20 @@
       .edit-box textarea{width:95%;height:70px;font-size:1rem;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:'Noto Sans JP',sans-serif;resize:none}
       .edit-box button{margin-top:4px;margin-right:6px;padding:6px 12px;font-size:.95rem;border-radius:6px;border:none;cursor:pointer}
       #preview-img{max-width:150px;max-height:150px;margin-top:8px;border-radius:6px}
+
+      /* 投票用スタイル */
+      .vote-box{padding:10px;border-radius:8px;background:#fff;margin-top:8px}
+      .vote-question{font-weight:bold;margin-bottom:8px}
+      .vote-choices button{margin:4px 6px 4px 0;padding:8px 12px;border-radius:8px;border:none;background:#1976d2;color:#fff;cursor:pointer}
+      .vote-result-row{display:flex;align-items:center;gap:8px;margin:8px 0}
+      .vote-bar-wrap{flex:1;background:#eee;border-radius:8px;height:16px;overflow:hidden}
+      .vote-bar{height:100%;background:#1976d2}
+      .vote-count{min-width:36px;text-align:right}
+
+      /* モーダル */
+      #vote-form{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);backdrop-filter:blur(3px);z-index:2000;align-items:center;justify-content:center}
+      #vote-form .panel{background:white;padding:20px;border-radius:10px;width:90%;max-width:420px}
+      #vote-form input{width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc}
     </style>
   </head>
   <body>
@@ -65,7 +79,23 @@
         <input type="file" id="img-file" accept="image/*" />
         <label for="img-file" id="img-file-label">🖼️</label>
         <img id="preview-img" style="display:none" />
+        <button id="vote-create-btn" style="padding:12px 14px;border-radius:10px;background:#1976d2;color:white;border:none;cursor:pointer;font-size:1rem">投票作成</button>
         <button id="send">送信</button>
+      </div>
+    </div>
+
+    <!-- 投票作成フォーム（モーダル） -->
+    <div id="vote-form">
+      <div class="panel">
+        <h3>投票を作成</h3>
+        <input id="vote-q" placeholder="質問（例：次のイベント日、いつがいい？）" />
+        <input id="vote-c1" placeholder="選択肢1" />
+        <input id="vote-c2" placeholder="選択肢2" />
+        <input id="vote-c3" placeholder="選択肢3" />
+        <div style="display:flex;gap:10px;margin-top:8px;">
+          <button id="vote-submit" style="flex:1;background:#1976d2;color:white;padding:10px;border:none;border-radius:6px;">作成</button>
+          <button id="vote-cancel" style="flex:1;background:#ccc;padding:10px;border:none;border-radius:6px;">キャンセル</button>
+        </div>
       </div>
     </div>
 
@@ -73,55 +103,70 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script>
       const firebaseConfig = {
-        apiKey:"AIzaSyCBn05euFWQVdKPSIZrwpUjxSOFphET3TU",
-        authDomain:"chat-a19bc.firebaseapp.com",
-        projectId:"chat-a19bc",
-        storageBucket:"chat-a19bc.firebasestorage.app",
-        messagingSenderId:"554571917384",
-        appId:"1:554571917384:web:3484a29f475fcf8db7d07d",
-        measurementId:"G-8058H1PRN7"
+        apiKey: 'AIzaSyCBn05euFWQVdKPSIZrwpUjxSOFphET3TU',
+        authDomain: 'chat-a19bc.firebaseapp.com',
+        projectId: 'chat-a19bc',
+        storageBucket: 'chat-a19bc.firebasestorage.app',
+        messagingSenderId: '554571917384',
+        appId: '1:554571917384:web:3484a29f475fcf8db7d07d',
+        measurementId: 'G-8058H1PRN7',
       };
-      const appChat=firebase.initializeApp(firebaseConfig);
-      const db=firebase.firestore(appChat);
+      const appChat = firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore(appChat);
 
-      const employeeConfig={
-        apiKey:"AIzaSyAWz50WSL2KvCS-0dmjtuGJHztEDR5CsZ8",
-        authDomain:"kandenmember.firebaseapp.com",
-        projectId:"kandenmember",
-        storageBucket:"kandenmember.firebasestorage.app",
-        messagingSenderId:"978509582642",
-        appId:"1:978509582642:web:d4b4e07ea1a6f5f768872b",
-        measurementId:"G-BFTYSMPKQ5"
+      const employeeConfig = {
+        apiKey: 'AIzaSyAWz50WSL2KvCS-0dmjtuGJHztEDR5CsZ8',
+        authDomain: 'kandenmember.firebaseapp.com',
+        projectId: 'kandenmember',
+        storageBucket: 'kandenmember.firebasestorage.app',
+        messagingSenderId: '978509582642',
+        appId: '1:978509582642:web:d4b4e07ea1a6f5f768872b',
+        measurementId: 'G-BFTYSMPKQ5',
       };
-      const appEmployee=firebase.initializeApp(employeeConfig,"employeeApp");
-      const employeeDB=firebase.firestore(appEmployee);
+      const appEmployee = firebase.initializeApp(employeeConfig, 'employeeApp');
+      const employeeDB = firebase.firestore(appEmployee);
 
-      const statusColors={管理職:{border:'#e04040',bg:'#f4f4f4'},神戸:{border:'#ff66b2',bg:'#ffe6f0'},淡路:{border:'#ff88ff',bg:'#ffeeff'},阪北:{border:'#f00000',bg:'#ffe6e6'},阪南:{border:'#f07000',bg:'#fff5e6'},奈良:{border:'#00f000',bg:'#e6ffe6'},滋賀:{border:'#00f0f0',bg:'#e6ffff'},東海:{border:'#0000f0',bg:'#e6e6ff'},本社:{border:'#000000',bg:'#e6e6e6'},一般:{border:'#000000',bg:'#e6e6e6'}};
+      const statusColors = { 管理職: { border: '#e04040', bg: '#f4f4f4' }, 神戸: { border: '#ff66b2', bg: '#ffe6f0' }, 淡路: { border: '#ff88ff', bg: '#ffeeff' }, 阪北: { border: '#f00000', bg: '#ffe6e6' }, 阪南: { border: '#f07000', bg: '#fff5e6' }, 奈良: { border: '#00f000', bg: '#e6ffe6' }, 滋賀: { border: '#00f0f0', bg: '#e6ffff' }, 東海: { border: '#0000f0', bg: '#e6e6ff' }, 本社: { border: '#000000', bg: '#e6e6e6' }, 一般: { border: '#000000', bg: '#e6e6e6' } };
 
-      let currentUserID=null,currentUserName=null,currentUserStatus=null;
+      let currentUserID = null,
+        currentUserName = null,
+        currentUserStatus = null;
 
-      function linkify(text){return text.replace(/(https?:\/\/[^\s]+)/g,'<a target="_blank" href="$1">$1<\/a>');}
+      function linkify(text) {
+        if (!text) return '';
+        return text.replace(/(https?:\/\/[^\s]+)/g, '<a target="_blank" href="$1">$1<\/a>');
+      }
 
-      document.getElementById('login-btn').addEventListener('click',async()=>{
-        const enteredID=document.getElementById('employee-id').value.trim();
-        try{
-          const doc=await employeeDB.collection("employees").doc(enteredID).get();
-          if(!doc.exists){document.getElementById('login-error').textContent='社員IDが正しくありません';return;}
-          const data=doc.data();
-          currentUserID=enteredID;
-          currentUserName=data.name;
-          currentUserStatus=data.status;
+      document.getElementById('login-btn').addEventListener('click', async () => {
+        const enteredID = document.getElementById('employee-id').value.trim();
+        try {
+          const doc = await employeeDB.collection('employees').doc(enteredID).get();
+          if (!doc.exists) {
+            document.getElementById('login-error').textContent = '社員IDが正しくありません';
+            return;
+          }
+          const data = doc.data();
+          currentUserID = enteredID;
+          currentUserName = data.name;
+          currentUserStatus = data.status;
 
-          document.getElementById('login-box').style.display='none';
-          document.getElementById('chat-container').style.display='flex';
-          document.getElementById('my-page-title').textContent=`${currentUserName}のマイページ`;
-          document.getElementById('current-user-name').textContent='現在制作中です。要望などありましたらお寄せください。';
+          document.getElementById('login-box').style.display = 'none';
+          document.getElementById('chat-container').style.display = 'flex';
+          document.getElementById('my-page-title').textContent = `${currentUserName}のマイページ`;
+          document.getElementById('current-user-name').textContent = '現在制作中です。要望などありましたらお寄せください。';
 
           initChat();
-        }catch(e){document.getElementById('login-error').textContent='通信エラー';}
+        } catch (e) {
+          console.error(e);
+          document.getElementById('login-error').textContent = '通信エラー';
+        }
       });
 
-      function formatTime(timestamp){if(!timestamp)return'';const d=timestamp.toDate();return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;}
+      function formatTime(timestamp) {
+        if (!timestamp) return '';
+        const d = timestamp.toDate();
+        return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+      }
 
       function resizeImage(file, maxSize = 800) {
         return new Promise((resolve) => {
@@ -142,14 +187,14 @@
               height *= ratio;
             }
 
-            const canvas = document.createElement("canvas");
+            const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
 
-            const ctx = canvas.getContext("2d");
+            const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            const resizedBase64 = canvas.toDataURL("image/jpeg", 0.9);
+            const resizedBase64 = canvas.toDataURL('image/jpeg', 0.9);
             resolve(resizedBase64);
           };
 
@@ -157,17 +202,55 @@
         });
       }
 
-      function initChat(){
-        const msgInput=document.getElementById('msg');
-        const fileInput=document.getElementById('img-file');
-        const previewImg=document.getElementById('preview-img');
-        const sendBtn=document.getElementById('send');
+      function initChat() {
+        const msgInput = document.getElementById('msg');
+        const fileInput = document.getElementById('img-file');
+        const previewImg = document.getElementById('preview-img');
+        const sendBtn = document.getElementById('send');
+        const voteCreateBtn = document.getElementById('vote-create-btn');
 
-        fileInput.addEventListener('change',()=>{
-          if(fileInput.files&&fileInput.files[0]){const r=new FileReader();r.onload=e=>{previewImg.src=e.target.result;previewImg.style.display='block';};r.readAsDataURL(fileInput.files[0]);}else{previewImg.style.display='none';previewImg.src='';}
+        fileInput.addEventListener('change', () => {
+          if (fileInput.files && fileInput.files[0]) {
+            const r = new FileReader();
+            r.onload = (e) => {
+              previewImg.src = e.target.result;
+              previewImg.style.display = 'block';
+            };
+            r.readAsDataURL(fileInput.files[0]);
+          } else {
+            previewImg.style.display = 'none';
+            previewImg.src = '';
+          }
         });
 
-        let isSending=false;
+        voteCreateBtn.addEventListener('click', () => {
+          document.getElementById('vote-form').style.display = 'flex';
+        });
+
+        document.getElementById('vote-cancel').addEventListener('click', () => {
+          document.getElementById('vote-form').style.display = 'none';
+        });
+
+        document.getElementById('vote-submit').addEventListener('click', async () => {
+          const q = document.getElementById('vote-q').value.trim();
+          const c1 = document.getElementById('vote-c1').value.trim();
+          const c2 = document.getElementById('vote-c2').value.trim();
+          const c3 = document.getElementById('vote-c3').value.trim();
+          const choices = [c1, c2, c3].filter((x) => x !== '');
+          if (!q || choices.length < 2) {
+            alert('質問と選択肢2つ以上が必要です');
+            return;
+          }
+
+          await sendVote(q, choices);
+          document.getElementById('vote-form').style.display = 'none';
+          document.getElementById('vote-q').value = '';
+          document.getElementById('vote-c1').value = '';
+          document.getElementById('vote-c2').value = '';
+          document.getElementById('vote-c3').value = '';
+        });
+
+        let isSending = false;
 
         sendBtn.addEventListener('click', async () => {
           if (isSending) return;
@@ -182,101 +265,220 @@
           try {
             let imageBase64 = null;
 
-          // ▼ 画像がある場合はリサイズして Base64 を作る
-          if (file) {
-            imageBase64 = await resizeImage(file, 800);
+            if (file) {
+              imageBase64 = await resizeImage(file, 800);
+            }
+
+            const lastMsgSnap = await db.collection('chat').orderBy('number', 'desc').limit(1).get();
+            let newNumber = 1;
+            if (!lastMsgSnap.empty) newNumber = (lastMsgSnap.docs[0].data().number || 0) + 1;
+
+            await db.collection('chat').add({
+              type: 'message',
+              text,
+              imageBase64,
+              uid: currentUserID,
+              name: currentUserName,
+              status: currentUserStatus,
+              number: newNumber,
+              time: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+
+            deleteOldMessages();
+
+            msgInput.value = '';
+            fileInput.value = '';
+            previewImg.style.display = 'none';
+            previewImg.src = '';
+          } catch (err) {
+            console.error('send error', err);
+            alert('送信中にエラーが発生しました');
+          } finally {
+            isSending = false;
+            sendBtn.disabled = false;
           }
+        });
 
-          // ▼ 番号を取得
-          const lastMsgSnap = await db
-            .collection('chat')
-            .orderBy('number', 'desc')
-            .limit(1)
-            .get();
-      
+        // リアルタイムでチャット表示
+        db.collection('chat').orderBy('time').onSnapshot((snapshot) => {
+          const chatBox = document.getElementById('chat-box');
+          chatBox.innerHTML = '';
+
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+
+            // 投票メッセージの場合
+            if (data.type === 'vote') {
+              const color = statusColors[data.status] || statusColors['一般'];
+              const div = document.createElement('div');
+              div.classList.add('chat-message');
+              div.style.background = color.bg;
+              div.style.borderLeft = `6px solid ${color.border}`;
+              div.dataset.id = doc.id;
+
+              const num = data.number ? `${data.number}. ` : '';
+              const time = formatTime(data.time);
+
+              // votes が undefined の場合は空オブジェクトにする
+              const votes = data.votes || {};
+              const already = votes[currentUserID] !== undefined;
+
+              let html = `<div class="meta-line">${num}${data.name}（${time}）</div>`;
+              html += `<div class="vote-box"><div class="vote-question">${escapeHtml(data.question || '')}</div>`;
+
+              if (!data.open) {
+                // 開票前
+                if (!already) {
+                  html += `<div class="vote-choices">${(data.choices || []).map((c, i) => `<button onclick="vote('${doc.id}', ${i})">${escapeHtml(c)}</button>`).join('')}</div>`;
+                } else {
+                  html += `<div style="color:#555;margin-top:8px;">投票済み</div>`;
+                }
+
+                if (data.uid === currentUserID) {
+                  html += `<div style="margin-top:8px;"><button onclick="openVote('${doc.id}')" style="background:#e04040;color:#fff;padding:6px 10px;border:none;border-radius:6px;">開票</button></div>`;
+                }
+              } else {
+                // 開票後: 結果表示（棒グラフ）
+                const counts = new Array((data.choices || []).length).fill(0);
+                for (const u in votes) {
+                  const idx = votes[u];
+                  if (typeof idx === 'number' && idx >= 0 && idx < counts.length) counts[idx]++;
+                }
+                const max = Math.max(...counts, 1);
+                html += `<div style="margin-top:6px;font-weight:bold;">結果</div>`;
+                html += (data.choices || []).map((c, i) => `
+                  <div class="vote-result-row">
+                    <div style="width:120px;">${escapeHtml(c)}</div>
+                    <div class="vote-bar-wrap"><div class="vote-bar" style="width:${(counts[i] / max) * 100}%;"></div></div>
+                    <div class="vote-count">${counts[i]}票</div>
+                  </div>
+                `).join('');
+              }
+
+              html += `</div>`; // vote-box
+              div.innerHTML = html;
+
+              // 作成者なら削除ボタンを表示（投票用）
+              if (data.uid === currentUserID) {
+                const actions = document.createElement('div');
+                actions.classList.add('msg-actions');
+                const del = document.createElement('span');
+                del.textContent = '削除';
+                del.style.cursor = 'pointer';
+                del.addEventListener('click', () => { if (confirm('本当に削除しますか？')) db.collection('chat').doc(doc.id).delete(); });
+                actions.appendChild(del);
+                div.appendChild(actions);
+              }
+
+              chatBox.appendChild(div);
+              return; // 通常メッセージ描画をスキップ
+            }
+
+            // 通常メッセージ
+            const color = statusColors[data.status] || statusColors['一般'];
+            const div = document.createElement('div');
+            div.classList.add('chat-message');
+            div.style.background = color.bg;
+            div.style.borderLeft = `6px solid ${color.border}`;
+            div.dataset.id = doc.id;
+            const num = data.number ? `${data.number}. ` : '';
+            const time = formatTime(data.time);
+            div.innerHTML = `<div class="meta-line">${num}${data.name}（${time}）</div><div class="text-line" id="text-${doc.id}">${linkify(data.text)}</div>${data.imageBase64?`<img src="${data.imageBase64}"/>`:''}`;
+
+            if (data.uid === currentUserID) {
+              div.classList.add('self');
+              div.style.border = `2px solid ${color.border}`;
+              const a = document.createElement('div');
+              a.classList.add('msg-actions');
+              a.innerHTML = `<span onclick="editMsg('${doc.id}', \`${escapeBackticks(data.text||'')}\`)">編集</span><span onclick="deleteMsg('${doc.id}')">削除</span>`;
+              div.appendChild(a);
+            }
+
+            chatBox.appendChild(div);
+          });
+
+          chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        setInterval(deleteOldMessages, 5 * 60 * 1000);
+      }
+
+      function escapeHtml(str){
+        if(!str) return '';
+        return String(str).replace(/[&<>\"']/g, (s) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[s]);
+      }
+      function escapeBackticks(str){ if(!str) return ''; return String(str).replace(/`/g,'\\`'); }
+
+      async function sendVote(question, choices){
+        try{
+          const lastMsgSnap = await db.collection('chat').orderBy('number','desc').limit(1).get();
           let newNumber = 1;
-          if (!lastMsgSnap.empty)
-            newNumber = (lastMsgSnap.docs[0].data().number || 0) + 1;
+          if (!lastMsgSnap.empty) newNumber = (lastMsgSnap.docs[0].data().number || 0) + 1;
 
-          // ▼ Firestore に送信
           await db.collection('chat').add({
-            text,
-            imageBase64,
+            type: 'vote',
+            question,
+            choices,
+            votes: {},
+            open: false,
             uid: currentUserID,
             name: currentUserName,
             status: currentUserStatus,
             number: newNumber,
             time: firebase.firestore.FieldValue.serverTimestamp(),
           });
+        }catch(e){console.error('sendVote error',e);alert('投票作成に失敗しました');}
+      }
 
-          deleteOldMessages();
+      async function vote(id, choiceIndex){
+        if(!currentUserID) { alert('ログインしてください'); return; }
+        try{
+          const docRef = db.collection('chat').doc(id);
+          const obj = {};
+          obj[`votes.${currentUserID}`] = choiceIndex;
+          await docRef.update(obj);
+        }catch(e){console.error('vote error',e);alert('投票に失敗しました');}
+      }
 
-          msgInput.value = '';
-          fileInput.value = '';
-          previewImg.style.display = 'none';
-          previewImg.src = '';
-
-        } catch (err) {
-          console.error('send error', err);
-          alert('送信中にエラーが発生しました');
-        } finally {
-          isSending = false;
-          sendBtn.disabled = false;
-        }
-        });
-
-
-        db.collection('chat').orderBy('time').onSnapshot(snapshot=>{
-          const chatBox=document.getElementById('chat-box');
-          chatBox.innerHTML='';
-          snapshot.forEach(doc=>{
-            const data=doc.data();
-            const color=statusColors[data.status]||statusColors['一般'];
-            const div=document.createElement('div');
-            div.classList.add('chat-message');
-            div.style.background=color.bg;
-            div.style.borderLeft=`6px solid ${color.border}`;
-            div.dataset.id=doc.id;
-            const num=data.number?`${data.number}. `:'';
-            const time=formatTime(data.time);
-            div.innerHTML=`<div class="meta-line">${num}${data.name}（${time}）</div><div class="text-line" id="text-${doc.id}">${linkify(data.text)}</div>${data.imageBase64?`<img src="${data.imageBase64}"/>`:''}`;
-            if(data.uid===currentUserID){
-              div.classList.add('self');
-              div.style.border=`2px solid ${color.border}`;
-              const a=document.createElement('div');a.classList.add('msg-actions');
-              a.innerHTML=`<span onclick="editMsg('${doc.id}', \`${data.text}\`)">編集</span><span onclick="deleteMsg('${doc.id}')">削除</span>`;
-              div.appendChild(a);
-            }
-            chatBox.appendChild(div);
-          });
-          chatBox.scrollTop=chatBox.scrollHeight;
-        });
-
-        setInterval(deleteOldMessages,5*60*1000);
+      async function openVote(id){
+        try{
+          const doc = await db.collection('chat').doc(id).get();
+          if(!doc.exists) return;
+          const data = doc.data();
+          if(data.uid !== currentUserID){ alert('作成者のみ開票できます'); return; }
+          await db.collection('chat').doc(id).update({ open: true });
+        }catch(e){console.error('openVote error', e);alert('開票に失敗しました');}
       }
 
       async function deleteOldMessages(){
-        const snap=await db.collection('chat').orderBy('time','desc').offset(200).get();
-        snap.forEach(doc=>db.collection('chat').doc(doc.id).delete());
+        try{
+          const snap = await db.collection('chat').orderBy('time','desc').offset(200).get();
+          snap.forEach(doc => db.collection('chat').doc(doc.id).delete());
+        }catch(e){console.error('deleteOldMessages error', e);} 
       }
 
       function editMsg(id,oldText){
-        const t=document.getElementById(`text-${id}`);
-        if(!t)return;
-        t.innerHTML=`<div class="edit-box" style="display:flex;gap:8px;margin-top:8px;align-items:flex-start;"><textarea id="edit-area-${id}" style="flex:1;height:70px;">${oldText}</textarea><div style="display:flex;gap:4px;flex-direction:column;"><button style="background-color:#e04040;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="saveEdit('${id}')">保存</button><button style="background-color:#e0e0e0;color:black;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="cancelEdit('${id}',\`${oldText}\`)">キャンセル</button></div></div>`;
+        const t = document.getElementById(`text-${id}`);
+        if(!t) return;
+        t.innerHTML = `<div class="edit-box" style="display:flex;gap:8px;margin-top:8px;align-items:flex-start;"><textarea id="edit-area-${id}" style="flex:1;height:70px;">${escapeHtml(oldText)}</textarea><div style="display:flex;gap:4px;flex-direction:column;"><button style="background-color:#e04040;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="saveEdit('${id}')">保存</button><button style="background-color:#e0e0e0;color:black;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;" onclick="cancelEdit('${id}',\`${escapeBackticks(oldText)}\`)">キャンセル</button></div></div>`;
       }
 
       function saveEdit(id){
-        const el=document.getElementById(`edit-area-${id}`);
-        if(!el)return;
-        const newText=el.value.trim();
-        if(newText===''){if(confirm('空のため削除しますか？'))deleteMsg(id);else cancelEdit(id,newText);return;}
-        db.collection('chat').doc(id).update({text:newText});
+        const el = document.getElementById(`edit-area-${id}`);
+        if(!el) return;
+        const newText = el.value.trim();
+        if(newText===''){ if(confirm('編集後の内容が空です。このメッセージを削除しますか？')) deleteMsg(id); else cancelEdit(id,newText); return; }
+        db.collection('chat').doc(id).update({ text: newText });
         cancelEdit(id,newText);
       }
 
-      function cancelEdit(id,text){const t=document.getElementById(`text-${id}`);if(!t)return;t.textContent=text;}
-      function deleteMsg(id){if(confirm('本当に削除しますか？'))db.collection('chat').doc(id).delete();}
+      function cancelEdit(id,text){
+        const t = document.getElementById(`text-${id}`);
+        if(!t) return;
+        t.textContent = text;
+      }
+
+      function deleteMsg(id){ if(confirm('本当に削除しますか？')) db.collection('chat').doc(id).delete(); }
     </script>
   </body>
 </html>
