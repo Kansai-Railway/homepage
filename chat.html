@@ -315,6 +315,11 @@
               div.style.background = color.bg;
               div.style.borderLeft = `6px solid ${color.border}`;
               div.dataset.id = doc.id;
+              if (data.uid === currentUserID) {
+                div.classList.add('self');
+                div.style.border = `2px solid ${color.border}`;
+              }
+
 
               const num = data.number ? `${data.number}. ` : '';
               const time = formatTime(data.time);
