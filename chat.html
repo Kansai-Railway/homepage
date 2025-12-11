@@ -330,6 +330,17 @@
               time: firebase.firestore.FieldValue.serverTimestamp(),
             });
 
+            // ---- 送信後プレビュー消去 ----
+            previewImg.src = "";
+            previewImg.style.display = "none";
+            const previewFileNameEl = document.getElementById("preview-file-name");
+            if (previewFileNameEl) {
+              previewFileNameEl.textContent = "";
+              previewFileNameEl.style.display = "none";
+            }
+            // input の中身も消す
+            fileInput.value = "";
+
             deleteOldMessages();
 
             msgInput.value = '';
