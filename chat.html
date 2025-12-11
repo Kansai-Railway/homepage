@@ -455,7 +455,7 @@
         }catch(e){console.error('openVote error', e);alert('開票に失敗しました');}
       }
 
-      async function deleteOldMessages() 
+      async function deleteOldMessages() {
         try {
           // 最新200件の最後のドキュメントを取得
           const latest200 = await db.collection('chat')
