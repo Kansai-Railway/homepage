@@ -274,6 +274,9 @@
           document.getElementById('vote-c1').value = '';
           document.getElementById('vote-c2').value = '';
           document.getElementById('vote-c3').value = '';
+          const previewFileNameEl = document.getElementById('preview-file-name');
+          previewFileNameEl.style.display = 'none';
+          previewFileNameEl.textContent = '';
         });
 
         let isSending = false;
