@@ -406,8 +406,6 @@
 
           chatBox.scrollTop = chatBox.scrollHeight;
         });
-
-        setInterval(deleteOldMessages, 5 * 60 * 1000);
       }
 
       function escapeHtml(str){
@@ -457,11 +455,39 @@
         }catch(e){console.error('openVote error', e);alert('開票に失敗しました');}
       }
 
-      async function deleteOldMessages(){
-        try{
-          const snap = await db.collection('chat').orderBy('time','desc').offset(200).get();
-          snap.forEach(doc => db.collection('chat').doc(doc.id).delete());
-        }catch(e){console.error('deleteOldMessages error', e);} 
+      async function deleteOldMessages() 
+        try {
+          // 最新200件の最後のドキュメントを取得
+          const latest200 = await db.collection('chat')
+            .orderBy('time', 'desc')
+            .limit(200)
+            .get();
+
+          if (latest200.empty) return;
+
+          const lastDoc = latest200.docs[latest200.docs.length - 1];
+          const lastTime = lastDoc.data().time;
+
+          if (!lastTime) return;
+
+          // 200件より前のメッセージ取得
+          const oldMessages = await db.collection('chat')
+            .orderBy('time')
+            .endBefore(lastTime)
+            .get();
+
+          if (oldMessages.empty) return;
+
+          // バッチ削除
+          const batch = db.batch();
+          oldMessages.forEach(doc => batch.delete(doc.ref));
+          await batch.commit();
+
+          console.log("古いメッセージ削除完了");
+
+        } catch (error) {
+          console.error("deleteOldMessages error:", error);
+        }
       }
 
       function editMsg(id,oldText){
