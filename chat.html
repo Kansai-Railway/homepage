@@ -404,7 +404,19 @@
             chatBox.appendChild(div);
           });
 
-          chatBox.scrollTop = chatBox.scrollHeight;
+          // ---- スクロール処理（改良版） ----
+          setTimeout(() => {
+            const chatBox = document.getElementById('chat-box');
+
+            const nowBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight;
+
+            // 読み返し中（100px以上上にいる）なら自動スクロールしない
+            const isReading = nowBottom > 100;
+          
+            if (!isReading) {
+              chatBox.scrollTop = chatBox.scrollHeight;
+            }
+          }, 20);
         });
       }
 
