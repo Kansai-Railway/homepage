@@ -33,6 +33,7 @@
       .edit-box textarea{width:95%;height:70px;font-size:1rem;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:'Noto Sans JP',sans-serif;resize:none}
       .edit-box button{margin-top:4px;margin-right:6px;padding:6px 12px;font-size:.95rem;border-radius:6px;border:none;cursor:pointer}
       #preview-img{max-width:150px;max-height:150px;margin-top:8px;border-radius:6px}
+      
 
       /* 投票用スタイル */
       .vote-box{padding:10px;border-radius:8px;background:#fff;margin-top:8px}
@@ -79,6 +80,8 @@
         <input type="file" id="img-file" accept="*/*" />
         <label for="img-file" id="img-file-label">🖼️</label>
         <img id="preview-img" style="display:none" />
+        <div id="preview-file-name" style="display:none; margin-top:8px; color:#555; font-size:14px;"></div>
+
         <label id="vote-create-btn" 
           style="cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:1px solid #ccc;background:#fff;">🗳️
         </label>
@@ -213,33 +216,38 @@
 
         fileInput.addEventListener('change', () => {
           const previewFileNameEl = document.getElementById('preview-file-name');
+        
           if (fileInput.files && fileInput.files[0]) {
             const file = fileInput.files[0];
-            // 画像ならプレビュー表示
+
             if (file.type && file.type.startsWith('image/')) {
+              // --- 画像の場合はプレビュー表示 ---
               const r = new FileReader();
               r.onload = (e) => {
                 previewImg.src = e.target.result;
                 previewImg.style.display = 'block';
-                if (previewFileNameEl) { previewFileNameEl.style.display = 'none'; previewFileNameEl.textContent = ''; }
+        
+                // ファイル名表示は消す
+                previewFileNameEl.style.display = 'none';
+                previewFileNameEl.textContent = '';
               };
               r.readAsDataURL(file);
             } else {
-              // 画像以外はプレビュー非表示でファイル名だけ表示
+              // --- 画像以外の場合：プレビューなしでファイル名だけ ---
               previewImg.style.display = 'none';
               previewImg.src = '';
-              if (previewFileNameEl) {
-                previewFileNameEl.textContent = `添付: ${file.name}`;
-                previewFileNameEl.style.display = 'block';
-              }
+
+              previewFileNameEl.textContent = `📎 添付ファイル: ${file.name}`;
+              previewFileNameEl.style.display = 'block';
             }
           } else {
+            // 何も選ばれていない時
             previewImg.style.display = 'none';
             previewImg.src = '';
-            if (previewFileNameEl) { previewFileNameEl.style.display = 'none'; previewFileNameEl.textContent = ''; }
+            previewFileNameEl.style.display = 'none';
+            previewFileNameEl.textContent = '';
           }
         });
-
 
         voteCreateBtn.addEventListener('click', () => {
           document.getElementById('vote-form').style.display = 'flex';
