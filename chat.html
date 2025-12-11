@@ -76,7 +76,7 @@
 
       <div class="chat-input" id="chat-input">
         <textarea id="msg" placeholder="メッセージを入力"></textarea>
-        <input type="file" id="img-file" accept="image/*" />
+        <input type="file" id="img-file" accept="*/*" />
         <label for="img-file" id="img-file-label">🖼️</label>
         <img id="preview-img" style="display:none" />
         <label id="vote-create-btn" 
@@ -212,18 +212,34 @@
         const voteCreateBtn = document.getElementById('vote-create-btn');
 
         fileInput.addEventListener('change', () => {
+          const previewFileNameEl = document.getElementById('preview-file-name');
           if (fileInput.files && fileInput.files[0]) {
-            const r = new FileReader();
-            r.onload = (e) => {
-              previewImg.src = e.target.result;
-              previewImg.style.display = 'block';
-            };
-            r.readAsDataURL(fileInput.files[0]);
+            const file = fileInput.files[0];
+            // 画像ならプレビュー表示
+            if (file.type && file.type.startsWith('image/')) {
+              const r = new FileReader();
+              r.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+                if (previewFileNameEl) { previewFileNameEl.style.display = 'none'; previewFileNameEl.textContent = ''; }
+              };
+              r.readAsDataURL(file);
+            } else {
+              // 画像以外はプレビュー非表示でファイル名だけ表示
+              previewImg.style.display = 'none';
+              previewImg.src = '';
+              if (previewFileNameEl) {
+                previewFileNameEl.textContent = `添付: ${file.name}`;
+                previewFileNameEl.style.display = 'block';
+              }
+            }
           } else {
             previewImg.style.display = 'none';
             previewImg.src = '';
+            if (previewFileNameEl) { previewFileNameEl.style.display = 'none'; previewFileNameEl.textContent = ''; }
           }
         });
+
 
         voteCreateBtn.addEventListener('click', () => {
           document.getElementById('vote-form').style.display = 'flex';
@@ -265,10 +281,27 @@
           sendBtn.disabled = true;
 
           try {
-            let imageBase64 = null;
+            // ---- ファイル処理: 画像はリサイズ、それ以外は dataURL を作る ----
+            let fileBase64 = null;
+            let fileType = null;
+            let fileName = null;
 
             if (file) {
-              imageBase64 = await resizeImage(file, 800);
+              fileName = file.name;
+              fileType = file.type || '';
+
+              if (fileType.startsWith('image/')) {
+                // 画像は既存のリサイズ関数を使う（戻り値は data URL）
+                fileBase64 = await resizeImage(file, 800);
+              } else {
+                // 画像以外はそのまま data URL に変換
+                fileBase64 = await new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = (e) => resolve(e.target.result);
+                  reader.onerror = (e) => reject(e);
+                  reader.readAsDataURL(file);
+                });
+              }
             }
 
             const lastMsgSnap = await db.collection('chat').orderBy('number', 'desc').limit(1).get();
@@ -278,7 +311,10 @@
             await db.collection('chat').add({
               type: 'message',
               text,
-              imageBase64,
+              // 互換性のため imageBase64 フィールドは使わず、新しく fileBase64 を使う
+              fileBase64,
+              fileType,
+              fileName,
               uid: currentUserID,
               name: currentUserName,
               status: currentUserStatus,
@@ -390,7 +426,26 @@
             div.dataset.id = doc.id;
             const num = data.number ? `${data.number}. ` : '';
             const time = formatTime(data.time);
-            div.innerHTML = `<div class="meta-line">${num}${data.name}（${time}）</div><div class="text-line" id="text-${doc.id}">${linkify(data.text)}</div>${data.imageBase64?`<img src="${data.imageBase64}"/>`:''}`;
+            // ---- ファイル表示用 HTML 作成（画像 or ダウンロードリンク） ----
+            let fileHtml = "";
+            const fb = data.fileBase64 || data.imageBase64; // 新フィールド or 既存互換
+            const ft = data.fileType || (data.imageBase64 ? 'image/*' : '');
+            const fn = data.fileName || (data.imageBase64 ? 'image' : '');
+            if (fb) {
+              if (ft && ft.startsWith('image/')) {
+                fileHtml = `<img src="${fb}" />`;
+              } else {
+                // 非画像ファイルはダウンロードリンク
+                const safeName = fn ? fn.replace(/"/g, '') : 'attachment';
+                fileHtml = `
+                  <div style="margin-top:8px;">
+                    <a href="${fb}" download="${safeName}" style="color:#0078ff;text-decoration:underline;">
+                      📎 添付ファイル: ${escapeHtml(safeName)}
+                    </a>
+                  </div>`;
+              }
+            }
+            div.innerHTML = `<div class="meta-line">${num}${data.name}（${time}）</div><div class="text-line" id="text-${doc.id}">${linkify(data.text)}</div>${fileHtml}`;
 
             if (data.uid === currentUserID) {
               div.classList.add('self');
