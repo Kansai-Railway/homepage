@@ -94,9 +94,13 @@
       <div class="panel">
         <h3>投票を作成</h3>
         <input id="vote-q" placeholder="質問" />
-        <input id="vote-c1" placeholder="選択肢1" />
-        <input id="vote-c2" placeholder="選択肢2" />
-        <input id="vote-c3" placeholder="選択肢3" />
+        <div id="vote-choices-container">
+          <input class="vote-choice" placeholder="選択肢1" />
+          <input class="vote-choice" placeholder="選択肢2" />
+        </div>
+        <button id="add-choice-btn" 
+          style="margin-top:10px;background:#ddd;border:none;padding:8px;border-radius:6px;"> ＋ 選択肢を追加
+        </button>
         <div style="display:flex;gap:10px;margin-top:8px;">
           <button id="vote-submit" style="flex:1;background:#e04040;color:white;padding:10px;border:none;border-radius:6px;">作成</button>
           <button id="vote-cancel" style="flex:1;background:#ccc;color:#e04040;padding:10px;border:none;border-radius:6px;">キャンセル</button>
@@ -207,6 +211,13 @@
         });
       }
 
+      function showVotePreview(question, choiceCount){
+        const box = document.getElementById("preview-file-name");
+        box.style.display = "block";
+        box.style.color = "#e04040";
+        box.textContent = `🗳️ 投票プレビュー：${question}（選択肢${choiceCount}）`;
+      }
+
       function initChat() {
         const msgInput = document.getElementById('msg');
         const fileInput = document.getElementById('img-file');
@@ -257,26 +268,30 @@
           document.getElementById('vote-form').style.display = 'none';
         });
 
-        document.getElementById('vote-submit').addEventListener('click', async () => {
+        document.getElementById("add-choice-btn").addEventListener("click", () => {
+          const container = document.getElementById("vote-choices-container");
+          const count = container.querySelectorAll(".vote-choice").length + 1;
+          const input = document.createElement("input");
+          input.className = "vote-choice";
+          input.placeholder = `選択肢${count}`;
+          input.style.marginTop = "6px";
+          container.appendChild(input);
+        });
+
+        let pendingVote = null;
+
+        document.getElementById('vote-submit').addEventListener('click', () => {
           const q = document.getElementById('vote-q').value.trim();
-          const c1 = document.getElementById('vote-c1').value.trim();
-          const c2 = document.getElementById('vote-c2').value.trim();
-          const c3 = document.getElementById('vote-c3').value.trim();
-          const choices = [c1, c2, c3].filter((x) => x !== '');
+          const choiceInputs = document.querySelectorAll('.vote-choice');
+          const choices = [...choiceInputs].map(i => i.value.trim()).filter(i => i);
           if (!q || choices.length < 2) {
-            alert('質問と選択肢2つ以上が必要です');
+            alert("質問と選択肢2つ以上が必要です");
             return;
           }
-
-          await sendVote(q, choices);
+          pendingVote = { question: q, choices };
+          showVotePreview(q, choices.length);
+          // フォーム閉じる
           document.getElementById('vote-form').style.display = 'none';
-          document.getElementById('vote-q').value = '';
-          document.getElementById('vote-c1').value = '';
-          document.getElementById('vote-c2').value = '';
-          document.getElementById('vote-c3').value = '';
-          const previewFileNameEl = document.getElementById('preview-file-name');
-          previewFileNameEl.style.display = 'none';
-          previewFileNameEl.textContent = '';
         });
 
         let isSending = false;
@@ -332,6 +347,23 @@
               number: newNumber,
               time: firebase.firestore.FieldValue.serverTimestamp(),
             });
+
+            if (pendingVote) {
+              await db.collection('chat').add({
+                type: 'vote',
+                question: pendingVote.question,
+                choices: pendingVote.choices,
+                votes: {},
+                open: false,
+                uid: currentUserID,
+                name: currentUserName,
+                status: currentUserStatus,
+                number: newNumber,
+                time: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+              pendingVote = null;
+              previewFileNameEl.style.display = "none";
+            }
 
             // ---- 送信後プレビュー消去 ----
             previewImg.src = "";
