@@ -64,10 +64,26 @@
 
     <div id="chat-container">
       <div class="section-header">
-        <div id="my-page-title">マイページ</div>
-        <div class="toggle-symbol" style="visibility:hidden">－</div>
-      </div>
-      <div class="current-user" id="current-user-name"></div>
+    <div id="my-page-title">マイページ</div>
+      <div class="toggle-symbol" style="visibility:hidden">－</div>
+    </div>
+    <div class="current-user" id="current-user-name"></div>
+    <div id="my-page" style="margin-bottom:30px;">
+      <div style="margin-top:10px;font-size:1rem;">ユーザー名変更</div>
+      <input
+        type="text"
+        id="edit-username"
+        style="margin-top:6px;padding:10px;width:300px;border-radius:8px;border:1px solid #ccc;"
+        placeholder="新しい表示名"
+      />
+      <button
+        id="save-username"
+        style="margin-left:8px;padding:10px 16px;border-radius:8px;border:none;background:#e04040;color:white;cursor:pointer;">
+        変更
+      </button>
+      <div id="name-update-msg" style="margin-top:8px;font-size:.9rem;"></div>
+    </div>
+
 
       <div class="section-header" id="chat-header">
         <div>全社員チャット</div>
